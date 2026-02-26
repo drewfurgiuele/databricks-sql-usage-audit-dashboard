@@ -1,0 +1,24 @@
+bundle:
+  name: sql-query-history-auditor
+
+include:
+  - resources/*.yml
+
+variables:
+  warehouse_id:
+    description: "SQL warehouse ID used to run dashboard queries"
+    default: "a3afa5aecd562eab"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://adb-3436974546539940.0.azuredatabricks.net/
+      profile: DEFAULT
+
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-3436974546539940.0.azuredatabricks.net/
+      profile: DEFAULT
