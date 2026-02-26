@@ -1,0 +1,1194 @@
+{
+  "datasets": [
+    {
+      "name": "ds_history",
+      "displayName": "Query History",
+      "queryLines": [
+        "SELECT statement_id, executed_by, COALESCE(execution_status, 'UNKNOWN') AS execution_status, COALESCE(compute.warehouse_id, 'serverless') AS warehouse_id, COALESCE(statement_type, 'UNKNOWN') AS statement_type, COALESCE(client_application, 'Unknown') AS client_application, total_duration_ms, ROUND(total_duration_ms / 1000.0, 2) AS total_duration_sec, CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END AS is_failed, CASE WHEN COALESCE(from_result_cache, false) = true THEN 1 ELSE 0 END AS cache_hit, start_time, end_time, COALESCE(read_rows, 0) AS read_rows, COALESCE(produced_rows, 0) AS produced_rows, ROUND(COALESCE(read_bytes, 0) / 1048576.0, 2) AS read_mb, COALESCE(CAST(from_result_cache AS STRING), 'false') AS from_result_cache, LEFT(COALESCE(statement_text, ''), 300) AS statement_preview, COALESCE(error_message, '') AS error_message FROM system.query.history"
+      ]
+    },
+    {
+      "name": "ds_longest_queries",
+      "displayName": "Longest Running Queries",
+      "queryLines": [
+        "SELECT executed_by, COALESCE(execution_status, 'UNKNOWN') AS execution_status, COALESCE(compute.warehouse_id, 'serverless') AS warehouse_id, COALESCE(statement_type, 'UNKNOWN') AS statement_type, COALESCE(client_application, 'Unknown') AS client_application, total_duration_ms, ROUND(total_duration_ms / 1000.0, 2) AS total_duration_sec, ROUND(COALESCE(execution_duration_ms, 0) / 1000.0, 2) AS execution_duration_sec, ROUND(COALESCE(compilation_duration_ms, 0) / 1000.0, 2) AS compilation_duration_sec, ROUND(COALESCE(waiting_for_compute_duration_ms, 0) / 1000.0, 2) AS waiting_for_compute_sec, start_time, COALESCE(read_rows, 0) AS read_rows, COALESCE(produced_rows, 0) AS produced_rows, ROUND(COALESCE(read_bytes, 0) / 1048576.0, 2) AS read_mb, COALESCE(CAST(from_result_cache AS STRING), 'false') AS from_result_cache, LEFT(COALESCE(statement_text, ''), 500) AS statement_preview, COALESCE(error_message, '') AS error_message FROM system.query.history ORDER BY total_duration_ms DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## SQL Query History Dashboard"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Monitor and analyze all SQL query activity from system.query.history. Use the Filters tab to narrow by date, user, warehouse, or status."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-total-queries",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "count(statement_id)",
+                      "expression": "COUNT(`statement_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(statement_id)",
+                  "displayName": "Total Queries"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total Queries"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-unique-users",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "countdistinct(executed_by)",
+                      "expression": "COUNT(DISTINCT `executed_by`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(executed_by)",
+                  "displayName": "Unique Users"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Unique Users"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-avg-duration",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "avg(total_duration_sec)",
+                      "expression": "AVG(`total_duration_sec`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(total_duration_sec)",
+                  "displayName": "Avg Duration (sec)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Duration (sec)"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-failed-queries",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "sum(is_failed)",
+                      "expression": "SUM(`is_failed`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(is_failed)",
+                  "displayName": "Failed Queries"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Failed Queries"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-cache-hits",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "sum(cache_hit)",
+                      "expression": "SUM(`cache_hit`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(cache_hit)",
+                  "displayName": "Cache Hits"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Cache Hits"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 5,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-data-read-mb",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "sum(read_mb)",
+                      "expression": "SUM(`read_mb`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(read_mb)",
+                  "displayName": "Total Data Read (MB)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total Data Read (MB)"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 5,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "section-trends",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### Query Trends"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-query-trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "daily(start_time)",
+                      "expression": "DATE_TRUNC(\"DAY\", `start_time`)"
+                    },
+                    {
+                      "name": "count(statement_id)",
+                      "expression": "COUNT(`statement_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(start_time)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "count(statement_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Queries"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Query Volume"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "queries-by-status",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "execution_status",
+                      "expression": "`execution_status`"
+                    },
+                    {
+                      "name": "count(statement_id)",
+                      "expression": "COUNT(`statement_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(statement_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Queries"
+                },
+                "color": {
+                  "fieldName": "execution_status",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Status"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Queries by Status"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 9,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "section-breakdown",
+            "multilineTextboxSpec": {
+              "lines": [
+                "### User & Application Breakdown"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "queries-by-user",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "executed_by",
+                      "expression": "`executed_by`"
+                    },
+                    {
+                      "name": "count(statement_id)",
+                      "expression": "COUNT(`statement_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "executed_by",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "User"
+                },
+                "y": {
+                  "fieldName": "count(statement_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Total Queries"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total Queries by User"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "queries-by-app",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "client_application",
+                      "expression": "`client_application`"
+                    },
+                    {
+                      "name": "count(statement_id)",
+                      "expression": "COUNT(`statement_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "client_application",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Application"
+                },
+                "y": {
+                  "fieldName": "count(statement_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Total Queries"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Queries by Client Application"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 15,
+            "width": 3,
+            "height": 5
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "query-history-detail",
+      "displayName": "Query History",
+      "layout": [
+        {
+          "widget": {
+            "name": "detail-title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Query History Detail"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "detail-subtitle",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Full query history with duration, row counts, and SQL previews. Apply global filters to narrow results."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "query-detail-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "executed_by",
+                      "expression": "`executed_by`"
+                    },
+                    {
+                      "name": "start_time",
+                      "expression": "`start_time`"
+                    },
+                    {
+                      "name": "end_time",
+                      "expression": "`end_time`"
+                    },
+                    {
+                      "name": "execution_status",
+                      "expression": "`execution_status`"
+                    },
+                    {
+                      "name": "warehouse_id",
+                      "expression": "`warehouse_id`"
+                    },
+                    {
+                      "name": "statement_type",
+                      "expression": "`statement_type`"
+                    },
+                    {
+                      "name": "client_application",
+                      "expression": "`client_application`"
+                    },
+                    {
+                      "name": "total_duration_sec",
+                      "expression": "`total_duration_sec`"
+                    },
+                    {
+                      "name": "read_rows",
+                      "expression": "`read_rows`"
+                    },
+                    {
+                      "name": "produced_rows",
+                      "expression": "`produced_rows`"
+                    },
+                    {
+                      "name": "read_mb",
+                      "expression": "`read_mb`"
+                    },
+                    {
+                      "name": "from_result_cache",
+                      "expression": "`from_result_cache`"
+                    },
+                    {
+                      "name": "statement_preview",
+                      "expression": "`statement_preview`"
+                    },
+                    {
+                      "name": "error_message",
+                      "expression": "`error_message`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "executed_by",
+                    "displayName": "User"
+                  },
+                  {
+                    "fieldName": "start_time",
+                    "displayName": "Start Time"
+                  },
+                  {
+                    "fieldName": "execution_status",
+                    "displayName": "Status"
+                  },
+                  {
+                    "fieldName": "warehouse_id",
+                    "displayName": "Warehouse ID"
+                  },
+                  {
+                    "fieldName": "statement_type",
+                    "displayName": "Type"
+                  },
+                  {
+                    "fieldName": "client_application",
+                    "displayName": "Application"
+                  },
+                  {
+                    "fieldName": "total_duration_sec",
+                    "displayName": "Duration (sec)"
+                  },
+                  {
+                    "fieldName": "read_rows",
+                    "displayName": "Rows Read"
+                  },
+                  {
+                    "fieldName": "produced_rows",
+                    "displayName": "Rows Produced"
+                  },
+                  {
+                    "fieldName": "read_mb",
+                    "displayName": "Data Read (MB)"
+                  },
+                  {
+                    "fieldName": "from_result_cache",
+                    "displayName": "Cache Hit"
+                  },
+                  {
+                    "fieldName": "statement_preview",
+                    "displayName": "SQL Preview"
+                  },
+                  {
+                    "fieldName": "error_message",
+                    "displayName": "Error Message"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Query History"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "longest-running-queries",
+      "displayName": "Longest Running Queries",
+      "layout": [
+        {
+          "widget": {
+            "name": "longest-title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Longest Running Queries"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "longest-subtitle",
+            "multilineTextboxSpec": {
+              "lines": [
+                "All queries ranked by total duration, descending. Includes breakdown of execution, compilation, and compute wait time. Global filters apply."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "longest-queries-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_longest_queries",
+                  "fields": [
+                    {
+                      "name": "executed_by",
+                      "expression": "`executed_by`"
+                    },
+                    {
+                      "name": "start_time",
+                      "expression": "`start_time`"
+                    },
+                    {
+                      "name": "execution_status",
+                      "expression": "`execution_status`"
+                    },
+                    {
+                      "name": "warehouse_id",
+                      "expression": "`warehouse_id`"
+                    },
+                    {
+                      "name": "statement_type",
+                      "expression": "`statement_type`"
+                    },
+                    {
+                      "name": "client_application",
+                      "expression": "`client_application`"
+                    },
+                    {
+                      "name": "total_duration_sec",
+                      "expression": "`total_duration_sec`"
+                    },
+                    {
+                      "name": "execution_duration_sec",
+                      "expression": "`execution_duration_sec`"
+                    },
+                    {
+                      "name": "compilation_duration_sec",
+                      "expression": "`compilation_duration_sec`"
+                    },
+                    {
+                      "name": "waiting_for_compute_sec",
+                      "expression": "`waiting_for_compute_sec`"
+                    },
+                    {
+                      "name": "read_rows",
+                      "expression": "`read_rows`"
+                    },
+                    {
+                      "name": "produced_rows",
+                      "expression": "`produced_rows`"
+                    },
+                    {
+                      "name": "read_mb",
+                      "expression": "`read_mb`"
+                    },
+                    {
+                      "name": "from_result_cache",
+                      "expression": "`from_result_cache`"
+                    },
+                    {
+                      "name": "statement_preview",
+                      "expression": "`statement_preview`"
+                    },
+                    {
+                      "name": "error_message",
+                      "expression": "`error_message`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "executed_by",
+                    "displayName": "User"
+                  },
+                  {
+                    "fieldName": "start_time",
+                    "displayName": "Start Time"
+                  },
+                  {
+                    "fieldName": "execution_status",
+                    "displayName": "Status"
+                  },
+                  {
+                    "fieldName": "warehouse_id",
+                    "displayName": "Warehouse ID"
+                  },
+                  {
+                    "fieldName": "statement_type",
+                    "displayName": "Type"
+                  },
+                  {
+                    "fieldName": "client_application",
+                    "displayName": "Application"
+                  },
+                  {
+                    "fieldName": "total_duration_sec",
+                    "displayName": "Total Duration (sec)"
+                  },
+                  {
+                    "fieldName": "execution_duration_sec",
+                    "displayName": "Execution (sec)"
+                  },
+                  {
+                    "fieldName": "compilation_duration_sec",
+                    "displayName": "Compilation (sec)"
+                  },
+                  {
+                    "fieldName": "waiting_for_compute_sec",
+                    "displayName": "Waiting for Compute (sec)"
+                  },
+                  {
+                    "fieldName": "read_rows",
+                    "displayName": "Rows Read"
+                  },
+                  {
+                    "fieldName": "produced_rows",
+                    "displayName": "Rows Produced"
+                  },
+                  {
+                    "fieldName": "read_mb",
+                    "displayName": "Data Read (MB)"
+                  },
+                  {
+                    "fieldName": "from_result_cache",
+                    "displayName": "Cache Hit"
+                  },
+                  {
+                    "fieldName": "statement_preview",
+                    "displayName": "SQL Preview"
+                  },
+                  {
+                    "fieldName": "error_message",
+                    "displayName": "Error Message"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Longest Running Queries (sorted by Total Duration)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "global-filters",
+      "displayName": "Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "filter-date-range",
+            "queries": [
+              {
+                "name": "ds_history_date",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "start_time",
+                      "expression": "`start_time`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "start_time",
+                    "displayName": "Date Range",
+                    "queryName": "ds_history_date"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Date Range"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter-user",
+            "queries": [
+              {
+                "name": "ds_history_user",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "executed_by",
+                      "expression": "`executed_by`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "executed_by",
+                    "displayName": "User",
+                    "queryName": "ds_history_user"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "User"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter-warehouse",
+            "queries": [
+              {
+                "name": "ds_history_warehouse",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "warehouse_id",
+                      "expression": "`warehouse_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "warehouse_id",
+                    "displayName": "SQL Warehouse",
+                    "queryName": "ds_history_warehouse"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "SQL Warehouse"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter-status",
+            "queries": [
+              {
+                "name": "ds_history_status",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "execution_status",
+                      "expression": "`execution_status`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "execution_status",
+                    "displayName": "Status",
+                    "queryName": "ds_history_status"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Execution Status"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter-stmt-type",
+            "queries": [
+              {
+                "name": "ds_history_stmt_type",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "statement_type",
+                      "expression": "`statement_type`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "statement_type",
+                    "displayName": "Statement Type",
+                    "queryName": "ds_history_stmt_type"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Statement Type"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter-client-app",
+            "queries": [
+              {
+                "name": "ds_history_client_app",
+                "query": {
+                  "datasetName": "ds_history",
+                  "fields": [
+                    {
+                      "name": "client_application",
+                      "expression": "`client_application`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "client_application",
+                    "displayName": "Client Application",
+                    "queryName": "ds_history_client_app"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Client Application"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS"
+    }
+  ]
+}
